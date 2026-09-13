@@ -2,6 +2,8 @@ export type AppRole = 'driver' | 'operations'
 export type OptimizationMode = 'balanced' | 'fastest' | 'lowest-emissions'
 export type TrafficView = 'map' | 'list' | 'chart'
 
+export type EmergencyState = 'NORMAL' | 'APPROACHING' | 'ALTERNATE CORRIDOR' | 'ROUTE UPDATED'
+
 export interface RoutePreferences {
   mode: OptimizationMode
   avoidTolls: boolean
@@ -11,6 +13,7 @@ export interface RoutePreferences {
 export interface TrafficAppState {
   role: AppRole | null
   preferences: RoutePreferences
+  emergencyState: EmergencyState
 }
 
 export interface NavigationItem {
@@ -40,6 +43,7 @@ export const defaultRoutePreferences: RoutePreferences = {
 export const defaultTrafficAppState: TrafficAppState = {
   role: null,
   preferences: defaultRoutePreferences,
+  emergencyState: 'NORMAL',
 }
 
 export const navigationItems: NavigationItem[] = [
@@ -50,6 +54,8 @@ export const navigationItems: NavigationItem[] = [
 export interface TrafficClientState extends TrafficAppState {
   setRole: (role: AppRole | null) => void
   setPreferences: (preferences: Partial<RoutePreferences>) => void
+  startEmergency: () => void
+  resetEmergency: () => void
   reset: () => void
 }
 

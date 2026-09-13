@@ -23,6 +23,7 @@ import {
   vehicleRoutes,
   type VehicleClass,
 } from '@/lib/traffic-network'
+import { useTrafficApp } from '@/components/traffic-app-provider'
 
 type Selection = VehicleClass | 'all'
 
@@ -57,6 +58,7 @@ export function TrafficMap({
   showHint = true,
   fill = false,
 }: TrafficMapProps) {
+  const { emergencyState } = useTrafficApp()
   const svgRef = useRef<SVGSVGElement | null>(null)
   const [view, setView] = useState({ scale: 1, tx: 0, ty: 0 })
   const [internalSelection, setInternalSelection] = useState<Selection>(initialSelection)
@@ -398,6 +400,19 @@ export function TrafficMap({
                 <title>{`${m.label} — ${m.detail}`}</title>
               </g>
             ))}
+
+            {/* ambulance marker during emergency simulation */}
+            {emergencyState !== 'NORMAL' && (
+              <g
+                transform={`translate(${
+                  emergencyState === 'APPROACHING' ? '330, 320' : '640, 470'
+                })`}
+                className="transition-all duration-1000 ease-in-out"
+              >
+                <circle cx={0} cy={0} r={6} fill="var(--traffic-emergency)" stroke="#101010" strokeWidth={1.5} />
+                <path d="M-2,0 L2,0 M0,-2 L0,2" stroke="#101010" strokeWidth={1.2} />
+              </g>
+            )}
           </g>
 
           {/* watermark — outside the pan/zoom group so it stays pinned */}

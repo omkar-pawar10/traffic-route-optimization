@@ -1,10 +1,11 @@
 'use client'
 
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useContext, useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import {
   type AppRole,
   type RoutePreferences,
   type TrafficClientState,
+  type EmergencyState,
   createDefaultRoutePreferences,
 } from '@/types/traffic'
 
@@ -15,19 +16,56 @@ export function TrafficAppProvider({ children }: { children: React.ReactNode }) 
   const [preferences, setPreferencesState] = useState<RoutePreferences>(
     createDefaultRoutePreferences,
   )
+  const [emergencyState, setEmergencyState] = useState<EmergencyState>('NORMAL')
+  const emergencyTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (emergencyTimerRef.current) {
+        clearTimeout(emergencyTimerRef.current)
+      }
+    }
+  }, [])
+
+  const resetEmergency = useCallback(() => {
+    if (emergencyTimerRef.current) {
+      clearTimeout(emergencyTimerRef.current)
+      emergencyTimerRef.current = null
+    }
+    setEmergencyState('NORMAL')
+  }, [])
+
+  const startEmergency = useCallback(() => {
+    if (emergencyState !== 'NORMAL' || emergencyTimerRef.current) return
+
+    setEmergencyState('APPROACHING')
+
+    emergencyTimerRef.current = setTimeout(() => {
+      setEmergencyState('ALTERNATE CORRIDOR')
+
+      emergencyTimerRef.current = setTimeout(() => {
+        setEmergencyState('ROUTE UPDATED')
+        emergencyTimerRef.current = null
+      }, 2500)
+    }, 2500)
+  }, [emergencyState])
 
   const value = useMemo<TrafficClientState>(
     () => ({
       role,
       preferences,
+      emergencyState,
       setRole,
       setPreferences: (next) => setPreferencesState((current) => ({ ...current, ...next })),
+      startEmergency,
+      resetEmergency,
       reset: () => {
         setRole(null)
         setPreferencesState(createDefaultRoutePreferences())
+        resetEmergency()
       },
     }),
-    [preferences, role],
+    [preferences, role, emergencyState, startEmergency, resetEmergency],
   )
 
   return <TrafficAppContext.Provider value={value}>{children}</TrafficAppContext.Provider>

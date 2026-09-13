@@ -32,6 +32,8 @@ export const viewport: Viewport = {
   userScalable: false,
 }
 
+import { TrafficAppProvider } from '@/components/traffic-app-provider'
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -40,7 +42,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <TooltipProvider>{children}</TooltipProvider>
+        <TrafficAppProvider>
+          <TooltipProvider>{children}</TooltipProvider>
+        </TrafficAppProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

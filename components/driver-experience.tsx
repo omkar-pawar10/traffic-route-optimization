@@ -36,6 +36,7 @@ import {
   type ReasonKind,
 } from '@/lib/driver-trip'
 import { appName } from '@/types/traffic'
+import { useTrafficApp } from '@/components/traffic-app-provider'
 
 const vehicleMeta: Record<VehicleClass, { label: string; Icon: LucideIcon }> = {
   freight: { label: 'Freight', Icon: Truck },
@@ -55,6 +56,7 @@ const reasonIcon: Record<ReasonKind, LucideIcon> = {
 }
 
 export function DriverExperience() {
+  const { emergencyState } = useTrafficApp()
   const [vehicle, setVehicle] = useState<VehicleClass>('freight')
   const [destinationId, setDestinationId] = useState<string>('electroniccity')
   const [navigating, setNavigating] = useState(false)
@@ -83,8 +85,14 @@ export function DriverExperience() {
       />
 
       {/* Top: trip context + compact vehicle selector */}
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-10 p-3">
-        <div className="pointer-events-auto mx-auto flex max-w-md flex-col gap-2.5 rounded-xl border border-border bg-surface-raised/90 p-3 shadow-lg backdrop-blur">
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-10 p-3 flex flex-col gap-2">
+        {emergencyState !== 'NORMAL' && (
+          <div className="pointer-events-auto mx-auto w-full max-w-md flex items-center gap-2 rounded-xl border border-[var(--traffic-emergency)]/30 bg-[#151010]/95 px-3 py-2 text-xs font-medium text-[var(--traffic-emergency)] shadow-lg backdrop-blur">
+            <TriangleAlert aria-hidden="true" className="size-4 shrink-0" />
+            <span>Ambulance Priority Route Active — Simulated</span>
+          </div>
+        )}
+        <div className="pointer-events-auto mx-auto w-full max-w-md flex flex-col gap-2.5 rounded-xl border border-border bg-surface-raised/90 p-3 shadow-lg backdrop-blur">
           <div className="flex items-center gap-2">
             <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <Route aria-hidden="true" className="size-3.5" />

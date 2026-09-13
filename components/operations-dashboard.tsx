@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Activity,
   AlertTriangle,
@@ -15,8 +15,11 @@ import {
 import { cn } from '@/lib/utils'
 import { TrafficMap } from '@/components/traffic-map'
 import { vehicleColorVar, type VehicleClass } from '@/lib/traffic-network'
+import { useTrafficApp } from '@/components/traffic-app-provider'
+import { OptimizationAnalysis } from '@/components/optimization-analysis'
 
 type Selection = VehicleClass | 'all'
+type ViewTab = 'LIVE OPERATIONS' | 'OPTIMIZATION ANALYSIS'
 
 const mockRoutes = [
   { id: 'RT-2841', vehicle: 'freight', eta: '14m', distance: '12.4', congestion: 'High', status: 'Active' },
@@ -28,8 +31,20 @@ const mockRoutes = [
 ]
 
 export function OperationsDashboard() {
+  const { emergencyState, startEmergency, resetEmergency } = useTrafficApp()
+  const [activeTab, setActiveTab] = useState<ViewTab>('LIVE OPERATIONS')
   const [selection, setSelection] = useState<Selection>('all')
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (emergencyState !== 'NORMAL') {
+      setSelection('emergency')
+      setSelectedRouteId('RT-7721')
+    } else {
+      setSelection('all')
+      setSelectedRouteId(null)
+    }
+  }, [emergencyState])
 
   const handleRouteSelect = (id: string, vehicle: VehicleClass) => {
     setSelectedRouteId(id)
@@ -54,8 +69,42 @@ export function OperationsDashboard() {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      {/* Metrics Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      {/* View Toggle */}
+      <div className="flex justify-center border-b border-[#292929] pb-4">
+        <div className="flex gap-1 bg-[#101010] p-1 rounded-lg border border-[#292929]">
+          <button
+            onClick={() => setActiveTab('LIVE OPERATIONS')}
+            className={cn(
+              "px-4 py-1.5 text-xs font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring tracking-wider",
+              activeTab === 'LIVE OPERATIONS'
+                ? "bg-[#292929] text-[#F2F2F2] shadow-sm"
+                : "text-[#A0A0A0] hover:text-[#F2F2F2] hover:bg-[#1B1B1B]"
+            )}
+          >
+            LIVE OPERATIONS
+          </button>
+          <button
+            onClick={() => setActiveTab('OPTIMIZATION ANALYSIS')}
+            className={cn(
+              "px-4 py-1.5 text-xs font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring tracking-wider",
+              activeTab === 'OPTIMIZATION ANALYSIS'
+                ? "bg-[#292929] text-[#F2F2F2] shadow-sm"
+                : "text-[#A0A0A0] hover:text-[#F2F2F2] hover:bg-[#1B1B1B]"
+            )}
+          >
+            OPTIMIZATION ANALYSIS
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'OPTIMIZATION ANALYSIS' ? (
+        <div className="flex-1 min-h-0">
+          <OptimizationAnalysis />
+        </div>
+      ) : (
+        <>
+          {/* Metrics Strip */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <MetricCard label="Vehicles" value="128" icon={Truck} />
         <MetricCard label="Routes" value="96" icon={Route} />
         <MetricCard label="Congestion" value="62%" icon={Activity} />
@@ -143,39 +192,76 @@ export function OperationsDashboard() {
               </h3>
               <div className="grid grid-cols-2 gap-4 mt-2">
                 <InspectorItem label="Selected Route" value={selectedRoute ? selectedRoute.id : '--'} />
-                <InspectorItem label="Status" value={selectedRoute ? "ACTIVE" : '--'} highlight />
+                <InspectorItem label="Status" value={selectedRoute ? (emergencyState !== 'NORMAL' ? emergencyState : 'ACTIVE') : '--'} highlight={emergencyState === 'NORMAL'} />
                 <InspectorItem label="Particles" value={selectedRoute ? "50" : '--'} />
                 <InspectorItem label="Iterations" value={selectedRoute ? "31" : '--'} />
                 <InspectorItem label="Algorithm" value={selectedRoute ? "A* READY" : '--'} />
-                <InspectorItem label="SLA" value={selectedRoute ? "<500ms" : '--'} />
+                <InspectorItem label="SLA" value={selectedRoute ? (emergencyState === 'ROUTE UPDATED' ? '184ms' : '<500ms') : '--'} />
               </div>
             </div>
 
             <div className="flex flex-col gap-3 rounded-lg border border-[#292929] bg-[#101010] p-4">
-              <h3 className="text-sm font-semibold text-[#F2F2F2] flex items-center gap-2">
-                <AlertTriangle className="size-4 text-[#A0A0A0]" />
-                Alerts & Status
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-[#F2F2F2] flex items-center gap-2">
+                  <AlertTriangle className="size-4 text-[#A0A0A0]" />
+                  Alerts & Status
+                </h3>
+                {emergencyState === 'NORMAL' ? (
+                  <button
+                    onClick={startEmergency}
+                    className="px-2 py-1 text-xs font-medium border border-[#292929] rounded bg-[#151515] hover:bg-[#1B1B1B] text-[#F2F2F2] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    Simulate Emergency
+                  </button>
+                ) : (
+                  <button
+                    onClick={resetEmergency}
+                    className="px-2 py-1 text-xs font-medium border border-[var(--traffic-emergency)] rounded bg-[var(--traffic-emergency)]/10 text-[var(--traffic-emergency)] hover:bg-[var(--traffic-emergency)]/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    Reset Simulation
+                  </button>
+                )}
+              </div>
               <div className="flex flex-col gap-2 mt-2">
-                <div className="flex items-start gap-2 text-xs">
-                  <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-[#F2F2F2] block font-medium">System Nominal</span>
-                    <span className="text-[#A0A0A0]">All routing nodes operating within parameters.</span>
+                {emergencyState !== 'NORMAL' ? (
+                  <div className="flex items-start gap-2 text-xs">
+                    <AlertTriangle className="size-4 shrink-0 mt-0.5" style={{ color: 'var(--traffic-emergency)' }} />
+                    <div>
+                      <span className="block font-medium" style={{ color: 'var(--traffic-emergency)' }}>
+                        AMBULANCE — {emergencyState === 'APPROACHING' ? 'Approaching' : emergencyState === 'ALTERNATE CORRIDOR' ? 'Rerouting' : 'SIMULATED'}
+                      </span>
+                      <span className="text-[#A0A0A0]">
+                        {emergencyState === 'APPROACHING' && 'Ambulance approaching. Heavy congestion on MG Road.'}
+                        {emergencyState === 'ALTERNATE CORRIDOR' && 'Rerouting ambulance. Priority corridor granted.'}
+                        {emergencyState === 'ROUTE UPDATED' && 'Route updated in 184 ms — simulated.'}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-start gap-2 text-xs">
-                  <AlertTriangle className="size-4 text-orange-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-[#F2F2F2] block font-medium">Congestion Detected</span>
-                    <span className="text-[#A0A0A0]">Heavy traffic reported on RT-5509 corridor.</span>
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-2 text-xs">
+                      <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-[#F2F2F2] block font-medium">System Nominal</span>
+                        <span className="text-[#A0A0A0]">All routing nodes operating within parameters.</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs">
+                      <AlertTriangle className="size-4 text-orange-500 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-[#F2F2F2] block font-medium">Congestion Detected</span>
+                        <span className="text-[#A0A0A0]">Heavy traffic reported on RT-5509 corridor.</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   )
 }
