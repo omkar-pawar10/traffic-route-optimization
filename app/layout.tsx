@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
+        <TooltipProvider>{children}</TooltipProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
