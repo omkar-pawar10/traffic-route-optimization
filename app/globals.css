@@ -47,38 +47,42 @@
 
 :root {
   color-scheme: dark;
-  --background: oklch(0.145 0.02 250);
-  --foreground: oklch(0.96 0.01 250);
-  --card: oklch(0.19 0.02 250);
-  --card-foreground: oklch(0.96 0.01 250);
-  --popover: oklch(0.19 0.02 250);
-  --popover-foreground: oklch(0.96 0.01 250);
-  --primary: oklch(0.78 0.16 190);
-  --primary-foreground: oklch(0.16 0.02 250);
-  --secondary: oklch(0.25 0.03 250);
-  --secondary-foreground: oklch(0.96 0.01 250);
-  --muted: oklch(0.22 0.025 250);
-  --muted-foreground: oklch(0.68 0.02 250);
-  --accent: oklch(0.25 0.04 190);
-  --accent-foreground: oklch(0.96 0.01 250);
-  --destructive: oklch(0.65 0.2 25);
-  --border: oklch(0.34 0.03 250);
-  --input: oklch(0.34 0.03 250);
-  --ring: oklch(0.78 0.16 190);
-  --chart-1: oklch(0.78 0.16 190);
-  --chart-2: oklch(0.7 0.14 150);
-  --chart-3: oklch(0.72 0.15 80);
-  --chart-4: oklch(0.68 0.18 320);
-  --chart-5: oklch(0.7 0.14 35);
-  --radius: 0.75rem;
-  --sidebar: oklch(0.17 0.02 250);
-  --sidebar-foreground: oklch(0.96 0.01 250);
-  --sidebar-primary: oklch(0.78 0.16 190);
-  --sidebar-primary-foreground: oklch(0.16 0.02 250);
-  --sidebar-accent: oklch(0.25 0.03 250);
-  --sidebar-accent-foreground: oklch(0.96 0.01 250);
-  --sidebar-border: oklch(0.34 0.03 250);
-  --sidebar-ring: oklch(0.78 0.16 190);
+  --background: #040404;
+  --foreground: #f2f2f2;
+  --card: #101010;
+  --card-foreground: #f2f2f2;
+  --popover: #151515;
+  --popover-foreground: #f2f2f2;
+  --primary: #f2f2f2;
+  --primary-foreground: #040404;
+  --secondary: #151515;
+  --secondary-foreground: #f2f2f2;
+  --muted: #1b1b1b;
+  --muted-foreground: #a0a0a0;
+  --accent: #1b1b1b;
+  --accent-foreground: #f2f2f2;
+  --destructive: #a85b5b;
+  --border: #292929;
+  --input: #292929;
+  --ring: #a0a0a0;
+  --chart-1: #a85b5b;
+  --chart-2: #c47a32;
+  --chart-3: #5c8fc7;
+  --chart-4: #6aa878;
+  --chart-5: #a0a0a0;
+  --traffic-emergency: #a85b5b;
+  --traffic-freight: #c47a32;
+  --traffic-passenger: #5c8fc7;
+  --traffic-two-wheeler: #6aa878;
+  --radius: 0.5rem;
+  --sidebar: #101010;
+  --sidebar-foreground: #f2f2f2;
+  --sidebar-primary: #f2f2f2;
+  --sidebar-primary-foreground: #040404;
+  --sidebar-accent: #1b1b1b;
+  --sidebar-accent-foreground: #f2f2f2;
+  --sidebar-border: #292929;
+  --sidebar-ring: #a0a0a0;
 }
 
 .dark {
@@ -157,7 +161,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
   body {
     @apply bg-background text-foreground;
+    min-width: 320px;
   }
 }
