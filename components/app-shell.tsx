@@ -13,7 +13,7 @@ import {
   type AppRole,
 } from '@/types/traffic'
 
-export function AppShell({ role }: { role: AppRole }) {
+export function AppShell({ role, children }: { role: AppRole; children?: React.ReactNode }) {
   const title = getRouteTitle(role)
 
   return (
@@ -59,31 +59,35 @@ export function AppShell({ role }: { role: AppRole }) {
             <p className="text-xs leading-5 text-muted-foreground">Frontend foundation only. Live traffic, GPS, APIs, persistence, and a real optimization engine are intentionally excluded.</p>
           </aside>
 
-          <section aria-labelledby="workspace-title" className="flex flex-col gap-6">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <BrainCircuit aria-hidden="true" />
-                <span className="text-sm">Quantum-inspired route optimization</span>
+          {children ? (
+            children
+          ) : (
+            <section aria-labelledby="workspace-title" className="flex flex-col gap-6">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <BrainCircuit aria-hidden="true" />
+                  <span className="text-sm">Quantum-inspired route optimization</span>
+                </div>
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <h1 id="workspace-title" className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+                  <Link
+                    href={role === 'driver' ? '/operations' : '/driver'}
+                    className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    View {role === 'driver' ? 'operations' : 'driver'} route
+                    <ArrowRight aria-hidden="true" />
+                  </Link>
+                </div>
+                <p className="max-w-2xl text-base leading-7 text-muted-foreground">
+                  {role === 'driver'
+                    ? 'Review the recommended path for your vehicle class across the simulated network. Physical height, weight, and vehicle restrictions are always respected.'
+                    : 'Monitor every vehicle-class route across the simulated network, with congestion, incidents, and physical restrictions surfaced on one operational map.'}
+                </p>
               </div>
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <h1 id="workspace-title" className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
-                <Link
-                  href={role === 'driver' ? '/operations' : '/driver'}
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  View {role === 'driver' ? 'operations' : 'driver'} route
-                  <ArrowRight aria-hidden="true" />
-                </Link>
-              </div>
-              <p className="max-w-2xl text-base leading-7 text-muted-foreground">
-                {role === 'driver'
-                  ? 'Review the recommended path for your vehicle class across the simulated network. Physical height, weight, and vehicle restrictions are always respected.'
-                  : 'Monitor every vehicle-class route across the simulated network, with congestion, incidents, and physical restrictions surfaced on one operational map.'}
-              </p>
-            </div>
 
-            <TrafficMap initialSelection={role === 'driver' ? 'passenger' : 'all'} />
-          </section>
+              <TrafficMap initialSelection={role === 'driver' ? 'passenger' : 'all'} />
+            </section>
+          )}
         </div>
 
         <footer className="mt-12 border-t border-border/70 pt-4 text-xs text-muted-foreground">
