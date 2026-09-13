@@ -31,7 +31,7 @@ const mockRoutes = [
 ]
 
 export function OperationsDashboard() {
-  const { emergencyState, startEmergency, resetEmergency } = useTrafficApp()
+  const { emergencyState, startEmergency, resetEmergency, currentCustomRoutes } = useTrafficApp()
   const [activeTab, setActiveTab] = useState<ViewTab>('LIVE OPERATIONS')
   const [selection, setSelection] = useState<Selection>('all')
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
@@ -180,6 +180,7 @@ export function OperationsDashboard() {
                fill 
                selection={selection}
                onSelectionChange={handleMapSelectionChange}
+               customRoutes={currentCustomRoutes}
              />
           </div>
 

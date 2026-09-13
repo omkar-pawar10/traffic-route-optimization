@@ -235,7 +235,7 @@ export function OptimizationAnalysis() {
                     contentStyle={{ backgroundColor: '#151515', borderColor: '#292929', fontSize: '12px', color: '#F2F2F2' }}
                     itemStyle={{ color: '#F2F2F2' }}
                   />
-                  <Bar dataKey="time" name="Time (ms)" fill="#4A4A4A" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="time" name="Time (ms)" fill="#4A4A4A" radius={[2, 2, 0, 0]} barSize={16} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -274,8 +274,8 @@ export function OptimizationAnalysis() {
                     name="Gap (%)" 
                     stroke="#3b82f6" 
                     strokeWidth={2} 
-                    dot={{ fill: '#101010', stroke: '#3b82f6', strokeWidth: 2, r: 4 }} 
-                    activeDot={{ r: 6, fill: '#3b82f6' }} 
+                    dot={{ fill: '#1B1B1B', stroke: '#3b82f6', strokeWidth: 1, r: 2 }} 
+                    activeDot={{ r: 4, fill: '#3b82f6' }} 
                   />
                 </LineChart>
               </ResponsiveContainer>

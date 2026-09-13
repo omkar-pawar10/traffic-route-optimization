@@ -328,3 +328,25 @@ export const congestionColorVar: Record<Exclude<Congestion, 'free'>, string> = {
   moderate: 'var(--status-warning)',
   heavy: 'var(--status-critical)',
 }
+
+export const routesForDestination: Record<string, typeof vehicleRouteByClass> = {
+  electroniccity: vehicleRouteByClass,
+  whitefield: {
+    freight: { ...vehicleRouteByClass.freight, points: [[250, 250], [380, 150], [500, 120], [620, 110], [800, 170], [960, 300], [1030, 280], [1090, 260]] },
+    passenger: { ...vehicleRouteByClass.passenger, points: [[250, 250], [360, 340], [470, 430], [500, 460], [560, 520], [700, 500], [780, 400], [760, 280], [800, 170], [960, 300], [1030, 280], [1090, 260]] },
+    'two-wheeler': { ...vehicleRouteByClass['two-wheeler'], points: [[250, 250], [330, 320], [400, 380], [470, 430], [470, 520], [560, 520], [700, 500], [780, 400], [760, 280], [800, 170], [960, 300], [1030, 280], [1090, 260]] },
+    emergency: { ...vehicleRouteByClass.emergency, points: [[250, 250], [330, 320], [400, 380], [470, 430], [560, 410], [620, 400], [720, 400], [820, 420], [900, 430], [940, 380], [960, 300], [1030, 280], [1090, 260]] },
+  },
+  silkboard: {
+    freight: { ...vehicleRouteByClass.freight, points: [[250, 250], [380, 150], [500, 120], [620, 110], [800, 170], [960, 300], [940, 380], [900, 430], [820, 560], [640, 660]] },
+    passenger: { ...vehicleRouteByClass.passenger, points: [[250, 250], [360, 340], [470, 430], [500, 460], [560, 520], [660, 540], [650, 600], [640, 660]] },
+    'two-wheeler': { ...vehicleRouteByClass['two-wheeler'], points: [[250, 250], [330, 320], [400, 380], [470, 430], [470, 520], [470, 600], [560, 570], [660, 540], [650, 600], [640, 660]] },
+    emergency: { ...vehicleRouteByClass.emergency, points: [[250, 250], [330, 320], [400, 380], [470, 430], [560, 410], [620, 400], [640, 470], [660, 540], [650, 600], [640, 660]] },
+  },
+  koramangala: {
+    freight: { ...vehicleRouteByClass.freight, points: [[250, 250], [380, 150], [500, 120], [620, 110], [800, 170], [960, 300], [940, 380], [900, 430], [820, 560], [640, 660], [650, 600], [660, 540]] },
+    passenger: { ...vehicleRouteByClass.passenger, points: [[250, 250], [360, 340], [470, 430], [500, 460], [560, 520], [660, 540]] },
+    'two-wheeler': { ...vehicleRouteByClass['two-wheeler'], points: [[250, 250], [330, 320], [400, 380], [470, 430], [470, 520], [470, 600], [560, 570], [660, 540]] },
+    emergency: { ...vehicleRouteByClass.emergency, points: [[250, 250], [330, 320], [400, 380], [470, 430], [560, 410], [620, 400], [640, 470], [660, 540]] },
+  },
+}

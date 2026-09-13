@@ -1,3 +1,5 @@
+import type { VehicleRoute } from '@/lib/traffic-network'
+
 export type AppRole = 'driver' | 'operations'
 export type OptimizationMode = 'balanced' | 'fastest' | 'lowest-emissions'
 export type TrafficView = 'map' | 'list' | 'chart'
@@ -14,6 +16,8 @@ export interface TrafficAppState {
   role: AppRole | null
   preferences: RoutePreferences
   emergencyState: EmergencyState
+  selectedDestination: string
+  currentCustomRoutes: VehicleRoute[]
 }
 
 export interface NavigationItem {
@@ -44,6 +48,8 @@ export const defaultTrafficAppState: TrafficAppState = {
   role: null,
   preferences: defaultRoutePreferences,
   emergencyState: 'NORMAL',
+  selectedDestination: 'electroniccity',
+  currentCustomRoutes: [], // Will be hydrated by provider
 }
 
 export const navigationItems: NavigationItem[] = [
@@ -54,6 +60,7 @@ export const navigationItems: NavigationItem[] = [
 export interface TrafficClientState extends TrafficAppState {
   setRole: (role: AppRole | null) => void
   setPreferences: (preferences: Partial<RoutePreferences>) => void
+  setSelectedDestination: (dest: string) => void
   startEmergency: () => void
   resetEmergency: () => void
   reset: () => void

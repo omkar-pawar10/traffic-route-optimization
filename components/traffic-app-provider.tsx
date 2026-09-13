@@ -8,6 +8,7 @@ import {
   type EmergencyState,
   createDefaultRoutePreferences,
 } from '@/types/traffic'
+import { routesForDestination } from '@/lib/traffic-network'
 
 const TrafficAppContext = createContext<TrafficClientState | null>(null)
 
@@ -17,7 +18,12 @@ export function TrafficAppProvider({ children }: { children: React.ReactNode }) 
     createDefaultRoutePreferences,
   )
   const [emergencyState, setEmergencyState] = useState<EmergencyState>('NORMAL')
+  const [selectedDestination, setSelectedDestination] = useState<string>('electroniccity')
   const emergencyTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const currentCustomRoutes = useMemo(() => {
+    return Object.values(routesForDestination[selectedDestination] ?? routesForDestination['electroniccity'])
+  }, [selectedDestination])
 
   useEffect(() => {
     return () => {
@@ -55,17 +61,21 @@ export function TrafficAppProvider({ children }: { children: React.ReactNode }) 
       role,
       preferences,
       emergencyState,
+      selectedDestination,
+      currentCustomRoutes,
       setRole,
       setPreferences: (next) => setPreferencesState((current) => ({ ...current, ...next })),
+      setSelectedDestination,
       startEmergency,
       resetEmergency,
       reset: () => {
         setRole(null)
         setPreferencesState(createDefaultRoutePreferences())
+        setSelectedDestination('electroniccity')
         resetEmergency()
       },
     }),
-    [preferences, role, emergencyState, startEmergency, resetEmergency],
+    [preferences, role, emergencyState, selectedDestination, currentCustomRoutes, startEmergency, resetEmergency],
   )
 
   return <TrafficAppContext.Provider value={value}>{children}</TrafficAppContext.Provider>

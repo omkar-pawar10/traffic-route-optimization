@@ -56,14 +56,13 @@ const reasonIcon: Record<ReasonKind, LucideIcon> = {
 }
 
 export function DriverExperience() {
-  const { emergencyState } = useTrafficApp()
+  const { emergencyState, selectedDestination, setSelectedDestination, currentCustomRoutes } = useTrafficApp()
   const [vehicle, setVehicle] = useState<VehicleClass>('freight')
-  const [destinationId, setDestinationId] = useState<string>('electroniccity')
   const [navigating, setNavigating] = useState(false)
   const [analysisOpen, setAnalysisOpen] = useState(false)
 
-  const trip = useMemo(() => computeTrip(vehicle, destinationId), [vehicle, destinationId])
-  const route = vehicleRouteByClass[vehicle]
+  const trip = useMemo(() => computeTrip(vehicle, selectedDestination), [vehicle, selectedDestination])
+  const route = useMemo(() => currentCustomRoutes.find(r => r.vehicle === vehicle)!, [currentCustomRoutes, vehicle])
   const activeMeta = vehicleMeta[vehicle]
 
   const selectVehicle = (next: VehicleClass) => {
@@ -81,6 +80,7 @@ export function DriverExperience() {
         showFocusCard={false}
         showHint={false}
         selection={vehicle}
+        customRoutes={currentCustomRoutes}
         className="absolute inset-0"
       />
 
@@ -114,9 +114,9 @@ export function DriverExperience() {
             <label className="relative ml-auto flex items-center">
               <span className="sr-only">Destination</span>
               <select
-                value={destinationId}
+                value={selectedDestination}
                 onChange={(e) => {
-                  setDestinationId(e.target.value)
+                  setSelectedDestination(e.target.value)
                   setNavigating(false)
                 }}
                 className="appearance-none rounded-md border border-border bg-surface-sunken py-1 pl-2 pr-7 text-xs font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

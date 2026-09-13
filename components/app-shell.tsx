@@ -29,12 +29,12 @@ export function AppShell({ role, children }: { role: AppRole; children?: React.R
               <span className="block text-xs text-muted-foreground">SIH {problemStatementId}</span>
             </span>
           </Link>
-          <Badge variant="outline" className="hidden sm:inline-flex">{prototypeDisclaimer}</Badge>
+          <Badge variant="outline" className="hidden sm:inline-flex text-[10px] px-2 py-0">{prototypeDisclaimer}</Badge>
         </div>
       </header>
 
       <main className="mx-auto flex min-h-[calc(100vh-73px)] w-full max-w-7xl flex-col px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-        <div className="grid flex-1 gap-8 lg:grid-cols-[240px_1fr]">
+        <div className="grid flex-1 gap-8 lg:grid-cols-[200px_1fr]">
           <aside aria-label="Workspace navigation" className="flex flex-col gap-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Workspaces</p>

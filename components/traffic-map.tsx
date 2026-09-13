@@ -40,6 +40,8 @@ interface TrafficMapProps {
   showHint?: boolean
   /** fill the parent's height instead of using a fixed aspect ratio */
   fill?: boolean
+  /** override the default routes to draw on the map */
+  customRoutes?: typeof vehicleRoutes
 }
 
 const MIN_SCALE = 0.6
@@ -57,6 +59,7 @@ export function TrafficMap({
   showFocusCard = true,
   showHint = true,
   fill = false,
+  customRoutes,
 }: TrafficMapProps) {
   const { emergencyState } = useTrafficApp()
   const svgRef = useRef<SVGSVGElement | null>(null)
@@ -139,11 +142,12 @@ export function TrafficMap({
   const reset = () => setView({ scale: 1, tx: 0, ty: 0 })
   const zoomButton = (factor: number) => zoomAt(factor, VIEWBOX.width / 2, VIEWBOX.height / 2)
 
+  const sourceRoutes = customRoutes ?? vehicleRoutes
   const activeRoutes = useMemo(
-    () => (selection === 'all' ? vehicleRoutes : vehicleRoutes.filter((r) => r.vehicle === selection)),
-    [selection],
+    () => (selection === 'all' ? sourceRoutes : sourceRoutes.filter((r) => r.vehicle === selection)),
+    [selection, sourceRoutes],
   )
-  const focused = selection !== 'all' ? vehicleRoutes.find((r) => r.vehicle === selection) : null
+  const focused = selection !== 'all' ? sourceRoutes.find((r) => r.vehicle === selection) : null
 
   return (
     <div className={cn('flex flex-col gap-3', fill && 'h-full gap-0', className)}>
@@ -151,7 +155,7 @@ export function TrafficMap({
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Highlight vehicle-class route">
           {selectionOrder.map((key) => {
             const active = selection === key
-            const label = key === 'all' ? 'All routes' : vehicleRoutes.find((r) => r.vehicle === key)?.label
+            const label = key === 'all' ? 'All routes' : sourceRoutes.find((r) => r.vehicle === key)?.label
             const dot = key === 'all' ? null : vehicleColorVar[key as VehicleClass]
             return (
               <button
