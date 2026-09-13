@@ -31,6 +31,14 @@ interface TrafficMapProps {
   initialSelection?: Selection
   /** show the vehicle-class selector strip */
   selectable?: boolean
+  /** controlled selection — when provided, the parent owns the highlighted route */
+  selection?: Selection
+  onSelectionChange?: (selection: Selection) => void
+  showLegend?: boolean
+  showFocusCard?: boolean
+  showHint?: boolean
+  /** fill the parent's height instead of using a fixed aspect ratio */
+  fill?: boolean
 }
 
 const MIN_SCALE = 0.6
@@ -38,10 +46,28 @@ const MAX_SCALE = 4.5
 
 const selectionOrder: Selection[] = ['all', 'emergency', 'freight', 'passenger', 'two-wheeler']
 
-export function TrafficMap({ className, initialSelection = 'all', selectable = true }: TrafficMapProps) {
+export function TrafficMap({
+  className,
+  initialSelection = 'all',
+  selectable = true,
+  selection: controlledSelection,
+  onSelectionChange,
+  showLegend = true,
+  showFocusCard = true,
+  showHint = true,
+  fill = false,
+}: TrafficMapProps) {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const [view, setView] = useState({ scale: 1, tx: 0, ty: 0 })
-  const [selection, setSelection] = useState<Selection>(initialSelection)
+  const [internalSelection, setInternalSelection] = useState<Selection>(initialSelection)
+  const selection = controlledSelection ?? internalSelection
+  const setSelection = useCallback(
+    (next: Selection) => {
+      onSelectionChange?.(next)
+      if (controlledSelection === undefined) setInternalSelection(next)
+    },
+    [controlledSelection, onSelectionChange],
+  )
   const dragState = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null)
 
   const clientToRatio = useCallback((clientX: number, clientY: number) => {
@@ -118,7 +144,7 @@ export function TrafficMap({ className, initialSelection = 'all', selectable = t
   const focused = selection !== 'all' ? vehicleRoutes.find((r) => r.vehicle === selection) : null
 
   return (
-    <div className={cn('flex flex-col gap-3', className)}>
+    <div className={cn('flex flex-col gap-3', fill && 'h-full gap-0', className)}>
       {selectable && (
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Highlight vehicle-class route">
           {selectionOrder.map((key) => {
@@ -146,12 +172,12 @@ export function TrafficMap({ className, initialSelection = 'all', selectable = t
         </div>
       )}
 
-      <div className="relative overflow-hidden rounded-lg border border-border bg-surface-sunken">
+      <div className={cn('relative overflow-hidden border border-border bg-surface-sunken', fill ? 'h-full rounded-none' : 'rounded-lg')}>
         <svg
           ref={svgRef}
           viewBox={`0 0 ${VIEWBOX.width} ${VIEWBOX.height}`}
           preserveAspectRatio="xMidYMid meet"
-          className="block aspect-[1200/820] w-full cursor-grab touch-none active:cursor-grabbing"
+          className={cn('block w-full cursor-grab touch-none active:cursor-grabbing', fill ? 'h-full' : 'aspect-[1200/820]')}
           role="img"
           aria-label="Simulated demonstration road network with vehicle-class routes and restrictions"
           onPointerDown={onPointerDown}
@@ -390,7 +416,7 @@ export function TrafficMap({ className, initialSelection = 'all', selectable = t
         </svg>
 
         {/* map controls */}
-        <div className="absolute right-3 top-3 flex flex-col gap-1.5">
+        <div className={cn('absolute flex flex-col gap-1.5', fill ? 'left-3 top-1/2 -translate-y-1/2' : 'right-3 top-3')}>
           <MapControl label="Zoom in" onClick={() => zoomButton(1.2)}>
             <Plus aria-hidden="true" className="size-4" />
           </MapControl>
@@ -403,13 +429,15 @@ export function TrafficMap({ className, initialSelection = 'all', selectable = t
         </div>
 
         {/* interaction hint */}
-        <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-md border border-border/70 bg-surface-sunken/80 px-2 py-1 text-[11px] text-muted-foreground backdrop-blur">
-          <Maximize2 aria-hidden="true" className="size-3" />
-          Drag to pan · scroll to zoom
-        </div>
+        {showHint && (
+          <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-md border border-border/70 bg-surface-sunken/80 px-2 py-1 text-[11px] text-muted-foreground backdrop-blur">
+            <Maximize2 aria-hidden="true" className="size-3" />
+            Drag to pan · scroll to zoom
+          </div>
+        )}
 
         {/* focused route summary */}
-        {focused && (
+        {showFocusCard && focused && (
           <div className="absolute bottom-3 left-3 max-w-xs rounded-md border border-border bg-surface-raised/95 p-3 text-xs backdrop-blur">
             <div className="flex items-center gap-2">
               <span
@@ -435,7 +463,7 @@ export function TrafficMap({ className, initialSelection = 'all', selectable = t
         )}
       </div>
 
-      <MapLegend />
+      {showLegend && <MapLegend />}
     </div>
   )
 }
