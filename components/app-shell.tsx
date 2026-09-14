@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, BrainCircuit, Route } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -21,8 +22,8 @@ export function AppShell({ role, children }: { role: AppRole; children?: React.R
       <header className="border-b border-border/70 bg-background/95">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/driver" className="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Route aria-hidden="true" />
+            <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+              <Image src="/logo.png" alt="MargDarshak Logo" width={36} height={36} className="h-full w-full object-cover" />
             </span>
             <span>
               <span className="block text-sm font-semibold tracking-tight">{appName}</span>
