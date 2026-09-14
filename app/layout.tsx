@@ -20,6 +20,7 @@ export const viewport: Viewport = {
 }
 
 import { TrafficAppProvider } from '@/components/traffic-app-provider'
+import { SplashScreen } from '@/components/splash-screen'
 
 export default function RootLayout({
   children,
@@ -29,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+        <SplashScreen />
         <TrafficAppProvider>
           <TooltipProvider>{children}</TooltipProvider>
         </TrafficAppProvider>
