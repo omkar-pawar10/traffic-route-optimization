@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import {
   Ambulance,
@@ -94,8 +95,8 @@ export function DriverExperience() {
         )}
         <div className="pointer-events-auto mx-auto w-full max-w-md flex flex-col gap-2.5 rounded-xl border border-border bg-surface-raised/90 p-3 shadow-lg backdrop-blur">
           <div className="flex items-center gap-2">
-            <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Route aria-hidden="true" className="size-3.5" />
+            <span className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-md">
+              <Image src="/logo.png" alt="MargDarshak Logo" width={24} height={24} className="h-full w-full object-cover" />
             </span>
             <span className="text-xs font-semibold tracking-tight">{appName}</span>
             <span className="text-xs text-muted-foreground">Driver</span>
