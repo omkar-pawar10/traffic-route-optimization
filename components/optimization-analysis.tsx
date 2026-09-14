@@ -180,7 +180,7 @@ export function OptimizationAnalysis() {
               <h3 className="text-lg font-semibold text-[#F2F2F2]">{data.name}</h3>
               {data.isDemoEngine && (
                 <span className="text-xs text-blue-400 mt-1 flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-md w-max">
-                  SIH26137 Demo Engine
+                  Demo Engine
                 </span>
               )}
               {data.id === 'Dijkstra' && (

@@ -4,7 +4,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Quantum Route · SIH26137',
+  title: 'MargDarshak',
   description: 'Frontend foundation for Quantum-Inspired Intelligent Traffic Route Optimization.',
   generator: 'v0.app',
   icons: {

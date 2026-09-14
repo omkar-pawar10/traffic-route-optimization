@@ -73,7 +73,8 @@ export function TrafficMap({
     },
     [controlledSelection, onSelectionChange],
   )
-  const dragState = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null)
+  const activePointers = useRef<Map<number, { clientX: number; clientY: number }>>(new Map())
+  const lastTouchState = useRef<{ distance: number; cx: number; cy: number } | null>(null)
 
   const clientToRatio = useCallback((clientX: number, clientY: number) => {
     const svg = svgRef.current
@@ -118,25 +119,81 @@ export function TrafficMap({
     return () => svg.removeEventListener('wheel', onWheel)
   }, [clientToRatio, zoomAt])
 
+  const updateTouchState = (pointersMap: Map<number, { clientX: number; clientY: number }>) => {
+    const pts = Array.from(pointersMap.values())
+    if (pts.length === 2) {
+      const cx = (pts[0].clientX + pts[1].clientX) / 2
+      const cy = (pts[0].clientY + pts[1].clientY) / 2
+      const distance = Math.hypot(pts[0].clientX - pts[1].clientX, pts[0].clientY - pts[1].clientY)
+      return { cx, cy, distance }
+    } else if (pts.length === 1) {
+      return { cx: pts[0].clientX, cy: pts[0].clientY, distance: 0 }
+    }
+    return null
+  }
+
   const onPointerDown = (e: ReactPointerEvent<SVGSVGElement>) => {
     ;(e.target as Element).setPointerCapture?.(e.pointerId)
-    dragState.current = { x: e.clientX, y: e.clientY, tx: view.tx, ty: view.ty }
+    activePointers.current.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY })
+    lastTouchState.current = updateTouchState(activePointers.current)
   }
+
   const onPointerMove = (e: ReactPointerEvent<SVGSVGElement>) => {
-    const d = dragState.current
-    if (!d) return
+    if (!activePointers.current.has(e.pointerId)) return
+
+    activePointers.current.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY })
+
+    const currentState = updateTouchState(activePointers.current)
+    if (!currentState || !lastTouchState.current) {
+      lastTouchState.current = currentState
+      return
+    }
+
     const svg = svgRef.current
     if (!svg) return
     const rect = svg.getBoundingClientRect()
     const scaleFit = Math.min(rect.width / VIEWBOX.width, rect.height / VIEWBOX.height)
-    setView((v) => ({
-      ...v,
-      tx: d.tx + (e.clientX - d.x) / scaleFit,
-      ty: d.ty + (e.clientY - d.y) / scaleFit,
-    }))
+
+    const deltaX = (currentState.cx - lastTouchState.current.cx) / scaleFit
+    const deltaY = (currentState.cy - lastTouchState.current.cy) / scaleFit
+
+    let zoomDelta = 1
+    if (currentState.distance > 0 && lastTouchState.current.distance > 0) {
+      zoomDelta = currentState.distance / lastTouchState.current.distance
+    }
+
+    if (activePointers.current.size === 1) {
+      setView((v) => ({
+        ...v,
+        tx: v.tx + deltaX,
+        ty: v.ty + deltaY,
+      }))
+    } else if (activePointers.current.size === 2) {
+      const { x: svgCx, y: svgCy } = clientToRatio(currentState.cx, currentState.cy)
+
+      setView((v) => {
+        let tx = v.tx + deltaX
+        let ty = v.ty + deltaY
+
+        if (zoomDelta !== 1) {
+          const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, v.scale * zoomDelta))
+          const applied = nextScale / v.scale
+
+          tx = svgCx - (svgCx - tx) * applied
+          ty = svgCy - (svgCy - ty) * applied
+          return { scale: nextScale, tx, ty }
+        }
+
+        return { ...v, tx, ty }
+      })
+    }
+
+    lastTouchState.current = currentState
   }
-  const endPan = () => {
-    dragState.current = null
+
+  const endPan = (e: ReactPointerEvent<SVGSVGElement>) => {
+    activePointers.current.delete(e.pointerId)
+    lastTouchState.current = updateTouchState(activePointers.current)
   }
 
   const reset = () => setView({ scale: 1, tx: 0, ty: 0 })

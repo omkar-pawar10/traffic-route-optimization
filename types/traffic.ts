@@ -26,9 +26,9 @@ export interface NavigationItem {
   description: string
 }
 
-export const appName = 'Quantum Route'
-export const projectName = 'Quantum-Inspired Intelligent Traffic Route Optimization'
-export const problemStatementId = 'SIH26137'
+export const appName = 'MargDarshak'
+export const projectName = 'Intelligent Traffic Route Optimization'
+export const problemStatementId = ''
 export const prototypeDisclaimer = 'Frontend-only demonstration prototype'
 
 export const appRoutes = {

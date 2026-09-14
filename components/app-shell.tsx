@@ -26,7 +26,6 @@ export function AppShell({ role, children }: { role: AppRole; children?: React.R
             </span>
             <span>
               <span className="block text-sm font-semibold tracking-tight">{appName}</span>
-              <span className="block text-xs text-muted-foreground">SIH {problemStatementId}</span>
             </span>
           </Link>
           <Badge variant="outline" className="hidden sm:inline-flex text-[10px] px-2 py-0">{prototypeDisclaimer}</Badge>
@@ -91,7 +90,7 @@ export function AppShell({ role, children }: { role: AppRole; children?: React.R
         </div>
 
         <footer className="mt-12 border-t border-border/70 pt-4 text-xs text-muted-foreground">
-          {appName} · {problemStatementId} · Frontend foundation
+          {appName} · Frontend foundation
         </footer>
       </main>
     </div>
