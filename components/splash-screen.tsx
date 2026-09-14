@@ -45,7 +45,7 @@ export function SplashScreen() {
           src="/splash-icon.png"
           alt="MargDarshak Logo"
           fill
-          className="object-contain translate-x-[3%] -translate-y-[20%]"
+          className="object-contain"
           priority
         />
       </div>
