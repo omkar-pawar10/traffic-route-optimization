@@ -42,7 +42,7 @@ export function SplashScreen() {
     >
       <div className={`relative flex h-64 w-64 md:h-96 md:w-96 items-center justify-center ${isFadingOut ? 'animate-splash-exit' : 'animate-splash-pop'}`}>
         <Image
-          src="/logo.png"
+          src="/splash-icon.png"
           alt="MargDarshak Logo"
           fill
           className="object-contain"
