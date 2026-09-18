@@ -153,13 +153,13 @@ export function OptimizationAnalysis() {
             Simulated Data
           </span>
         </div>
-        <div className="flex gap-1.5 bg-[#151515] p-1 rounded-md border border-[#292929]">
+        <div className="flex gap-1.5 bg-[#151515] p-1 rounded-md border border-[#292929] overflow-x-auto max-w-full">
           {algorithms.map((alg) => (
             <button
               key={alg.id}
               onClick={() => setSelectedAlg(alg.id)}
               className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'px-3 py-1.5 text-xs font-medium rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0 whitespace-nowrap',
                 selectedAlg === alg.id
                   ? 'bg-[#292929] text-[#F2F2F2] shadow-sm'
                   : 'text-[#A0A0A0] hover:text-[#F2F2F2] hover:bg-[#1B1B1B]'

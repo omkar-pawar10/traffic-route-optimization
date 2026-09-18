@@ -29,6 +29,7 @@ interface TripBase {
 export interface DriverTrip extends TripBase {
   destinationName: string
   detourKm: number
+  detourPercent: number
   /** true when the shortest path cannot be used and a detour is required */
   shortestInfeasible: boolean
 }
@@ -131,21 +132,28 @@ const scaleByDestination: Record<string, number> = {
 
 const round1 = (n: number) => Math.round(n * 10) / 10
 
-export function computeTrip(vehicle: VehicleClass, destinationId: string): DriverTrip {
+export function computeTrip(vehicle: VehicleClass, destinationId: string, emergencyState: string = 'NORMAL'): DriverTrip {
   const base = tripBaseByVehicle[vehicle]
   const scale = scaleByDestination[destinationId] ?? 1
   const destination = driverDestinations.find((d) => d.id === destinationId)
   const shortestKm = round1(base.shortestKm * scale)
-  const feasibleKm = round1(base.feasibleKm * scale)
+  let feasibleKm = round1(base.feasibleKm * scale)
+  let feasibleMin = Math.max(1, Math.round(base.feasibleMin * scale))
+  
+  if (vehicle !== 'emergency' && (emergencyState === 'ROUTE UPDATED' || emergencyState === 'ALTERNATE CORRIDOR')) {
+    feasibleKm = round1(feasibleKm + 0.8)
+    feasibleMin = feasibleMin + 3
+  }
 
   return {
     ...base,
     shortestKm,
     feasibleKm,
     shortestMin: Math.max(1, Math.round(base.shortestMin * scale)),
-    feasibleMin: Math.max(1, Math.round(base.feasibleMin * scale)),
+    feasibleMin,
     destinationName: destination?.name ?? 'Destination',
     detourKm: round1(feasibleKm - shortestKm),
+    detourPercent: shortestKm > 0 ? Math.round(((feasibleKm - shortestKm) / shortestKm) * 100) : 0,
     shortestInfeasible: base.reasons.length > 0,
   }
 }

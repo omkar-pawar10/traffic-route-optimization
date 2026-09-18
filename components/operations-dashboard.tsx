@@ -14,9 +14,10 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TrafficMap } from '@/components/traffic-map'
-import { vehicleColorVar, type VehicleClass } from '@/lib/traffic-network'
+import { vehicleColorVar, type VehicleClass, vehicleRoutes, fleetRoutes, incidents, roads, type Incident } from '@/lib/traffic-network'
 import { useTrafficApp } from '@/components/traffic-app-provider'
 import { OptimizationAnalysis } from '@/components/optimization-analysis'
+import { ImpactSummary } from '@/components/impact-summary'
 
 type Selection = VehicleClass | 'all'
 type ViewTab = 'LIVE OPERATIONS' | 'OPTIMIZATION ANALYSIS'
@@ -30,11 +31,26 @@ const mockRoutes = [
   { id: 'RT-3312', vehicle: 'freight', eta: '45m', distance: '38.0', congestion: 'Medium', status: 'Active' },
 ]
 
+function getNearestRoad(inc: Incident) {
+  let best = roads[0]
+  let minDist = Infinity
+  for (const r of roads) {
+    for (const p of r.points) {
+      const d = Math.hypot(p[0] - inc.x, p[1] - inc.y)
+      if (d < minDist) { minDist = d; best = r }
+    }
+  }
+  return best
+}
+
 export function OperationsDashboard() {
   const { emergencyState, startEmergency, resetEmergency, currentCustomRoutes } = useTrafficApp()
   const [activeTab, setActiveTab] = useState<ViewTab>('LIVE OPERATIONS')
   const [selection, setSelection] = useState<Selection>('all')
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
+  const [fleetView, setFleetView] = useState(false)
+  const [simulatedIncident, setSimulatedIncident] = useState<{ roadId: string, roadName: string, routesRecalculated: number } | null>(null)
+  const [systemLoad, setSystemLoad] = useState<'NORMAL' | 'HIGH'>('NORMAL')
 
   useEffect(() => {
     if (emergencyState !== 'NORMAL') {
@@ -45,6 +61,25 @@ export function OperationsDashboard() {
       setSelectedRouteId(null)
     }
   }, [emergencyState])
+
+  const triggerIncident = () => {
+    const inc = incidents[Math.floor(Math.random() * incidents.length)]
+    const nearestRoad = getNearestRoad(inc)
+    setSimulatedIncident({
+      roadId: nearestRoad.id,
+      roadName: nearestRoad.name,
+      routesRecalculated: Math.floor(Math.random() * 40) + 10
+    })
+  }
+
+  useEffect(() => {
+    if (simulatedIncident) {
+      const timer = setTimeout(() => {
+        setSimulatedIncident(null)
+      }, 6000)
+      return () => clearTimeout(timer)
+    }
+  }, [simulatedIncident])
 
   const handleRouteSelect = (id: string, vehicle: VehicleClass) => {
     setSelectedRouteId(id)
@@ -70,8 +105,8 @@ export function OperationsDashboard() {
   return (
     <div className="flex flex-col gap-4 h-full">
       {/* View Toggle */}
-      <div className="flex justify-center border-b border-[#292929] pb-4">
-        <div className="flex gap-1 bg-[#101010] p-1 rounded-lg border border-[#292929]">
+      <div className="flex flex-col sm:flex-row relative items-center justify-center border-b border-[#292929] pb-4 gap-3 sm:gap-0">
+        <div className="flex gap-1 bg-[#101010] p-1 rounded-lg border border-[#292929] max-w-full overflow-x-auto shrink-0">
           <button
             onClick={() => setActiveTab('LIVE OPERATIONS')}
             className={cn(
@@ -95,6 +130,24 @@ export function OperationsDashboard() {
             OPTIMIZATION ANALYSIS
           </button>
         </div>
+        
+        {activeTab === 'LIVE OPERATIONS' && (
+          <div className="sm:absolute static right-0 top-1 flex items-center gap-2">
+            <span className="text-[10px] font-medium text-[#A0A0A0] tracking-wider uppercase">Fleet View</span>
+            <button
+              onClick={() => setFleetView(!fleetView)}
+              className={cn(
+                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                fleetView ? "bg-emerald-500" : "bg-[#292929]"
+              )}
+            >
+              <span className={cn(
+                "pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform",
+                fleetView ? "translate-x-4" : "translate-x-0"
+              )} />
+            </button>
+          </div>
+        )}
       </div>
 
       {activeTab === 'OPTIMIZATION ANALYSIS' ? (
@@ -105,12 +158,14 @@ export function OperationsDashboard() {
         <>
           {/* Metrics Strip */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <MetricCard label="Vehicles" value="128" icon={Truck} />
-        <MetricCard label="Routes" value="96" icon={Route} />
+        <MetricCard label="Vehicles" value={((currentCustomRoutes?.length ?? vehicleRoutes.length) + (fleetView ? fleetRoutes.length : 0)).toString()} icon={Truck} />
+        <MetricCard label="Routes" value={((currentCustomRoutes?.length ?? vehicleRoutes.length) + (fleetView ? fleetRoutes.length : 0)).toString()} icon={Route} />
         <MetricCard label="Congestion" value="62%" icon={Activity} />
         <MetricCard label="Avg ETA" value="14.8 min" icon={Clock} />
         <MetricCard label="Latency" value="184 ms" icon={Server} />
       </div>
+
+      <ImpactSummary routeCount={((currentCustomRoutes?.length ?? vehicleRoutes.length) + (fleetView ? fleetRoutes.length : 0))} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
         {/* Left Column: Route Table */}
@@ -180,25 +235,46 @@ export function OperationsDashboard() {
                fill 
                selection={selection}
                onSelectionChange={handleMapSelectionChange}
-               customRoutes={currentCustomRoutes}
+               customRoutes={fleetView ? [...(currentCustomRoutes ?? vehicleRoutes), ...fleetRoutes] : currentCustomRoutes}
+               simulatedIncidentRoadId={simulatedIncident?.roadId}
              />
           </div>
 
           {/* Bottom Panel: Engine Inspector */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-3 rounded-lg border border-[#292929] bg-[#101010] p-4">
-              <h3 className="text-sm font-semibold text-[#F2F2F2] flex items-center gap-2">
-                <Cpu className="size-4 text-[#A0A0A0]" />
-                Engine Inspector
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-[#F2F2F2] flex items-center gap-2">
+                  <Cpu className="size-4 text-[#A0A0A0]" />
+                  Engine Inspector
+                </h3>
+                <button
+                  onClick={() => setSystemLoad(l => l === 'NORMAL' ? 'HIGH' : 'NORMAL')}
+                  className={cn(
+                    "px-2 py-1 text-xs font-medium border rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    systemLoad === 'HIGH' 
+                      ? "border-orange-500 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20" 
+                      : "border-[#292929] bg-[#151515] text-[#F2F2F2] hover:bg-[#1B1B1B]"
+                  )}
+                >
+                  System Load: {systemLoad === 'HIGH' ? 'High' : 'Normal'}
+                </button>
+              </div>
               <div className="grid grid-cols-2 gap-4 mt-2">
                 <InspectorItem label="Selected Route" value={selectedRoute ? selectedRoute.id : '--'} />
                 <InspectorItem label="Status" value={selectedRoute ? (emergencyState !== 'NORMAL' ? emergencyState : 'ACTIVE') : '--'} highlight={emergencyState === 'NORMAL'} />
-                <InspectorItem label="Particles" value={selectedRoute ? "50" : '--'} />
-                <InspectorItem label="Iterations" value={selectedRoute ? "31" : '--'} />
-                <InspectorItem label="Algorithm" value={selectedRoute ? "A* READY" : '--'} />
-                <InspectorItem label="SLA" value={selectedRoute ? (emergencyState === 'ROUTE UPDATED' ? '184ms' : '<500ms') : '--'} />
+                <InspectorItem label="Particles" value={systemLoad === 'HIGH' ? "20" : "50"} />
+                <InspectorItem label="Iterations" value="31" />
+                <InspectorItem 
+                  label="Algorithm" 
+                  value={systemLoad === 'HIGH' ? "A* FALLBACK" : "A* READY"} 
+                  warning={systemLoad === 'HIGH'}
+                />
+                <InspectorItem label="SLA" value={emergencyState === 'ROUTE UPDATED' ? '184ms' : '<500ms'} />
               </div>
+              {systemLoad === 'HIGH' && (
+                <p className="text-[10px] text-orange-400 mt-2">K reduced 5→2 to hold SLA under load.</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-3 rounded-lg border border-[#292929] bg-[#101010] p-4">
@@ -207,30 +283,66 @@ export function OperationsDashboard() {
                   <AlertTriangle className="size-4 text-[#A0A0A0]" />
                   Alerts & Status
                 </h3>
-                {emergencyState === 'NORMAL' ? (
-                  <button
-                    onClick={startEmergency}
-                    className="px-2 py-1 text-xs font-medium border border-[#292929] rounded bg-[#151515] hover:bg-[#1B1B1B] text-[#F2F2F2] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    Simulate Emergency
-                  </button>
-                ) : (
-                  <button
-                    onClick={resetEmergency}
-                    className="px-2 py-1 text-xs font-medium border border-[var(--traffic-emergency)] rounded bg-[var(--traffic-emergency)]/10 text-[var(--traffic-emergency)] hover:bg-[var(--traffic-emergency)]/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    Reset Simulation
-                  </button>
-                )}
+                <div className="flex gap-2">
+                  {simulatedIncident ? (
+                    <button
+                      disabled
+                      className="px-2 py-1 text-xs font-medium border border-orange-500/50 rounded bg-orange-500/10 text-orange-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      Simulating...
+                    </button>
+                  ) : (
+                    <button
+                      onClick={triggerIncident}
+                      className="px-2 py-1 text-xs font-medium border border-[#292929] rounded bg-[#151515] hover:bg-[#1B1B1B] text-[#F2F2F2] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      Simulate Incident
+                    </button>
+                  )}
+                  {emergencyState === 'NORMAL' ? (
+                    <button
+                      onClick={startEmergency}
+                      className="px-2 py-1 text-xs font-medium border border-[#292929] rounded bg-[#151515] hover:bg-[#1B1B1B] text-[#F2F2F2] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      Simulate Emergency
+                    </button>
+                  ) : (
+                    <button
+                      onClick={resetEmergency}
+                      className="px-2 py-1 text-xs font-medium border border-[var(--traffic-emergency)] rounded bg-[var(--traffic-emergency)]/10 text-[var(--traffic-emergency)] hover:bg-[var(--traffic-emergency)]/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      Reset Simulation
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="flex flex-col gap-2 mt-2">
+                {simulatedIncident && (
+                  <div className="flex items-start gap-2 text-xs animate-in fade-in slide-in-from-top-1 duration-500">
+                    <AlertTriangle className="size-4 text-orange-500 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-orange-400 font-medium">INCIDENT DETECTED</span>
+                        <span className="text-[10px] uppercase tracking-wider text-orange-400 font-medium border border-orange-500/30 bg-orange-500/10 px-1.5 py-0.5 rounded-sm inline-flex items-center w-max">
+                          Simulated
+                        </span>
+                      </div>
+                      <span className="text-[#A0A0A0]">
+                        Edge {simulatedIncident.roadName} congestion → heavy. {simulatedIncident.routesRecalculated} routes recalculated.
+                      </span>
+                    </div>
+                  </div>
+                )}
                 {emergencyState !== 'NORMAL' ? (
                   <div className="flex items-start gap-2 text-xs">
                     <AlertTriangle className="size-4 shrink-0 mt-0.5" style={{ color: 'var(--traffic-emergency)' }} />
                     <div>
-                      <span className="block font-medium" style={{ color: 'var(--traffic-emergency)' }}>
-                        AMBULANCE — {emergencyState === 'APPROACHING' ? 'Approaching' : emergencyState === 'ALTERNATE CORRIDOR' ? 'Rerouting' : 'SIMULATED'}
-                      </span>
+                      <div className="flex items-center gap-2 mb-0.5 text-[var(--traffic-emergency)] font-medium">
+                        <span>AMBULANCE — {emergencyState === 'APPROACHING' ? 'Approaching' : emergencyState === 'ALTERNATE CORRIDOR' ? 'Rerouting' : 'Active'}</span>
+                        <span className="text-[10px] uppercase tracking-wider text-[var(--traffic-emergency)] font-medium border border-[var(--traffic-emergency)]/30 bg-[var(--traffic-emergency)]/10 px-1.5 py-0.5 rounded-sm inline-flex items-center w-max">
+                          Simulated
+                        </span>
+                      </div>
                       <span className="text-[#A0A0A0]">
                         {emergencyState === 'APPROACHING' && 'Ambulance approaching. Heavy congestion on MG Road.'}
                         {emergencyState === 'ALTERNATE CORRIDOR' && 'Rerouting ambulance. Priority corridor granted.'}
@@ -281,13 +393,13 @@ function MetricCard({ label, value, icon: Icon }: { label: string, value: string
   )
 }
 
-function InspectorItem({ label, value, highlight }: { label: string, value: string, highlight?: boolean }) {
+function InspectorItem({ label, value, highlight, warning }: { label: string, value: string, highlight?: boolean, warning?: boolean }) {
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-[10px] uppercase tracking-wider text-[#A0A0A0]">{label}</span>
       <span className={cn(
-        "text-sm font-medium tabular-nums",
-        highlight ? "text-emerald-400" : "text-[#F2F2F2]"
+        "text-sm font-medium tabular-nums truncate",
+        warning ? "text-orange-400" : highlight ? "text-emerald-400" : "text-[#F2F2F2]"
       )}>
         {value}
       </span>

@@ -66,6 +66,8 @@ export interface RestrictionMarker {
 }
 
 export interface VehicleRoute {
+  id?: string
+  color?: string
   vehicle: VehicleClass
   label: string
   points: Point[]
@@ -211,6 +213,20 @@ export const roads: RoadSegment[] = [
     points: [[620, 400], [640, 470], [660, 540]],
     congestion: 'moderate',
   },
+  {
+    id: 'western-bypass',
+    name: 'Western Relief Road',
+    roadClass: 'major',
+    points: [[250, 250], [200, 400], [250, 600], [450, 750], [700, 780]],
+    congestion: 'free',
+  },
+  {
+    id: 'eastern-bypass',
+    name: 'Eastern Outer Link',
+    roadClass: 'secondary',
+    points: [[820, 560], [800, 680], [700, 780]],
+    congestion: 'free',
+  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -350,3 +366,91 @@ export const routesForDestination: Record<string, typeof vehicleRouteByClass> = 
     emergency: { ...vehicleRouteByClass.emergency, points: [[250, 250], [330, 320], [400, 380], [470, 430], [560, 410], [620, 400], [640, 470], [660, 540]] },
   },
 }
+
+export const emergencyAlternateRoutes: Record<string, typeof vehicleRouteByClass> = {
+  electroniccity: {
+    ...routesForDestination['electroniccity'],
+    freight: {
+      ...routesForDestination['electroniccity'].freight,
+      points: [[250, 250], [380, 150], [500, 120], [620, 110], [800, 170], [960, 300], [940, 380], [900, 430], [820, 560], [800, 680], [700, 780]],
+      summary: 'Rerouted via Eastern Outer Link to avoid Silk Board congestion',
+    },
+    passenger: {
+      ...routesForDestination['electroniccity'].passenger,
+      points: [[250, 250], [200, 400], [250, 600], [450, 750], [700, 780]],
+      summary: 'Diverted to Western Relief Road to clear priority corridor',
+    },
+    'two-wheeler': {
+      ...routesForDestination['electroniccity']['two-wheeler'],
+      points: [[250, 250], [200, 400], [250, 600], [450, 750], [700, 780]],
+      summary: 'Diverted to Western Relief Road to clear priority corridor',
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fleet Simulation
+// ---------------------------------------------------------------------------
+
+function seededRandom(seed: number) {
+  return function() {
+    seed = (seed * 9301 + 49297) % 233280
+    return seed / 233280
+  }
+}
+
+function generateFleetRoutes(count: number, seed: number = 42): VehicleRoute[] {
+  const rng = seededRandom(seed)
+  const classes: VehicleClass[] = ['freight', 'passenger', 'two-wheeler']
+  
+  // Base hex colors approximating the CSS vars for the variants
+  const baseColors: Record<VehicleClass, [number, number, number]> = {
+    emergency: [168, 91, 91],
+    freight: [196, 122, 50],
+    passenger: [92, 143, 199],
+    'two-wheeler': [106, 168, 120]
+  }
+
+  const routes: VehicleRoute[] = []
+  
+  for (let i = 0; i < count; i++) {
+    const vClass = classes[Math.floor(rng() * classes.length)]
+    
+    // Variant color (slight jitter in RGB)
+    const baseColor = baseColors[vClass]
+    const r = Math.min(255, Math.max(0, baseColor[0] + (rng() * 40 - 20)))
+    const g = Math.min(255, Math.max(0, baseColor[1] + (rng() * 40 - 20)))
+    const b = Math.min(255, Math.max(0, baseColor[2] + (rng() * 40 - 20)))
+    const hexColor = `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g).toString(16).padStart(2, '0')}${Math.round(b).toString(16).padStart(2, '0')}`
+
+    const validRoads = roads.filter(r => !r.restricted && (!r.restriction?.bannedVehicles?.includes(vClass)))
+    const road = validRoads[Math.floor(rng() * validRoads.length)]
+    
+    const pts = road.points
+    const startIdx = Math.floor(rng() * (pts.length - 1))
+    const endIdx = startIdx + 1 + Math.floor(rng() * (pts.length - startIdx - 1))
+    
+    const slice = pts.slice(startIdx, endIdx + 1)
+    if (rng() > 0.5) slice.reverse()
+    
+    const xOffset = rng() * 12 - 6
+    const yOffset = rng() * 12 - 6
+    const jitteredPts = slice.map(p => [p[0] + xOffset, p[1] + yOffset] as Point)
+    
+    routes.push({
+      id: `FLT-${1000 + i}`,
+      color: hexColor,
+      vehicle: vClass,
+      label: `Fleet ${vClass}`,
+      points: jitteredPts,
+      distanceKm: Math.round((rng() * 10 + 2) * 10) / 10,
+      etaMin: Math.round(rng() * 30 + 5),
+      summary: `Active fleet on ${road.name}`,
+      respects: []
+    })
+  }
+  
+  return routes
+}
+
+export const fleetRoutes = generateFleetRoutes(30)

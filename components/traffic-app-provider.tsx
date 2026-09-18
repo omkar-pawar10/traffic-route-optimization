@@ -8,7 +8,7 @@ import {
   type EmergencyState,
   createDefaultRoutePreferences,
 } from '@/types/traffic'
-import { routesForDestination } from '@/lib/traffic-network'
+import { routesForDestination, emergencyAlternateRoutes } from '@/lib/traffic-network'
 
 const TrafficAppContext = createContext<TrafficClientState | null>(null)
 
@@ -22,8 +22,15 @@ export function TrafficAppProvider({ children }: { children: React.ReactNode }) 
   const emergencyTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const currentCustomRoutes = useMemo(() => {
-    return Object.values(routesForDestination[selectedDestination] ?? routesForDestination['electroniccity'])
-  }, [selectedDestination])
+    let routesRecord = routesForDestination[selectedDestination] ?? routesForDestination['electroniccity']
+    
+    // Use the physically authored alternate routes to clear the emergency corridor
+    if ((emergencyState === 'ROUTE UPDATED' || emergencyState === 'ALTERNATE CORRIDOR') && emergencyAlternateRoutes[selectedDestination]) {
+      routesRecord = emergencyAlternateRoutes[selectedDestination]
+    }
+    
+    return Object.values(routesRecord)
+  }, [selectedDestination, emergencyState])
 
   useEffect(() => {
     return () => {

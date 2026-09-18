@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import {
   Ambulance,
+  ArrowRight,
   Ban,
   Bike,
   Car,
@@ -21,6 +22,7 @@ import {
   TriangleAlert,
   Truck,
   Weight,
+  X,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -57,12 +59,13 @@ const reasonIcon: Record<ReasonKind, LucideIcon> = {
 }
 
 export function DriverExperience() {
-  const { emergencyState, selectedDestination, setSelectedDestination, currentCustomRoutes } = useTrafficApp()
+  const { emergencyState, selectedDestination, setSelectedDestination, currentCustomRoutes, startEmergency, resetEmergency } = useTrafficApp()
   const [vehicle, setVehicle] = useState<VehicleClass>('freight')
   const [navigating, setNavigating] = useState(false)
   const [analysisOpen, setAnalysisOpen] = useState(false)
+  const [showPrivacyBanner, setShowPrivacyBanner] = useState(true)
 
-  const trip = useMemo(() => computeTrip(vehicle, selectedDestination), [vehicle, selectedDestination])
+  const trip = useMemo(() => computeTrip(vehicle, selectedDestination, emergencyState), [vehicle, selectedDestination, emergencyState])
   const route = useMemo(() => currentCustomRoutes.find(r => r.vehicle === vehicle)!, [currentCustomRoutes, vehicle])
   const activeMeta = vehicleMeta[vehicle]
 
@@ -87,10 +90,28 @@ export function DriverExperience() {
 
       {/* Top: trip context + compact vehicle selector */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 p-3 flex flex-col gap-2">
+        {showPrivacyBanner && (
+          <div className="pointer-events-auto mx-auto w-full max-w-md flex items-center justify-between gap-2 rounded-xl border border-border bg-surface-raised/90 px-3 py-2 text-[11px] text-muted-foreground shadow-lg backdrop-blur">
+            <span className="flex items-center gap-2">
+              <ShieldCheck aria-hidden="true" className="size-3.5 shrink-0 text-emerald-500/80" />
+              <span>Location shared only during active trips, used for routing and anonymized analytics.</span>
+            </span>
+            <button 
+              onClick={() => setShowPrivacyBanner(false)}
+              className="p-1 -mr-1 rounded hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+              aria-label="Dismiss privacy notice"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
+        )}
         {emergencyState !== 'NORMAL' && (
           <div className="pointer-events-auto mx-auto w-full max-w-md flex items-center gap-2 rounded-xl border border-[var(--traffic-emergency)]/30 bg-[#151010]/95 px-3 py-2 text-xs font-medium text-[var(--traffic-emergency)] shadow-lg backdrop-blur">
             <TriangleAlert aria-hidden="true" className="size-4 shrink-0" />
-            <span>Ambulance Priority Route Active — Simulated</span>
+            <span className="flex-1 truncate">Ambulance Priority Route Active</span>
+            <span className="text-[10px] uppercase tracking-wider text-[var(--traffic-emergency)] font-medium border border-[var(--traffic-emergency)]/20 bg-[var(--traffic-emergency)]/10 px-1.5 py-0.5 rounded-sm inline-flex items-center w-max ml-auto shrink-0">
+              Simulated
+            </span>
           </div>
         )}
         <div className="pointer-events-auto mx-auto w-full max-w-md flex flex-col gap-2.5 rounded-xl border border-border bg-surface-raised/90 p-3 shadow-lg backdrop-blur">
@@ -100,11 +121,17 @@ export function DriverExperience() {
             </span>
             <span className="text-xs font-semibold tracking-tight">{appName}</span>
             <span className="text-xs text-muted-foreground">Driver</span>
+            <button
+              onClick={emergencyState === 'NORMAL' ? startEmergency : resetEmergency}
+              className="ml-auto rounded-md px-2 py-0.5 text-[10px] font-medium text-[var(--traffic-emergency)] border border-[var(--traffic-emergency)]/30 hover:bg-[var(--traffic-emergency)]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {emergencyState === 'NORMAL' ? 'Simulate Emergency' : 'Reset Emergency'}
+            </button>
             <Link
               href="/operations"
-              className="ml-auto rounded-md px-1.5 py-0.5 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex items-center gap-1.5 rounded-md bg-white pl-4 pr-3 py-1 text-[10px] font-semibold text-black hover:bg-neutral-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ml-2"
             >
-              Operations
+              Operations <ArrowRight className="size-3" />
             </Link>
           </div>
 
@@ -180,7 +207,7 @@ export function DriverExperience() {
 
           <div className="flex flex-col gap-3 px-4 pb-4">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex flex-col gap-0.5">
+              <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                 <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span
                     className="size-2 rounded-full"
@@ -203,9 +230,9 @@ export function DriverExperience() {
 
             {navigating && (
               <div className="flex items-center gap-2 rounded-lg border border-status-info/30 bg-status-info/10 px-3 py-2 text-xs text-status-info">
-                <Navigation aria-hidden="true" className="size-3.5" />
-                <span className="text-foreground">Navigating</span>
-                <span className="text-muted-foreground">— continue on {trip.via.split('&')[0].trim()}</span>
+                <Navigation aria-hidden="true" className="size-3.5 shrink-0" />
+                <span className="text-foreground shrink-0">Navigating</span>
+                <span className="text-muted-foreground truncate">— continue on {trip.via.split('&')[0].trim()}</span>
               </div>
             )}
 
@@ -261,6 +288,9 @@ export function DriverExperience() {
                     <span className="text-lg font-semibold tabular-nums text-foreground">{trip.feasibleKm} km</span>
                     <span className="text-xs text-muted-foreground">via {trip.via}</span>
                     <span className="text-xs font-medium text-status-success">Recommended</span>
+                    <span className={trip.detourPercent > 20 ? "text-[10px] font-medium text-status-warning" : "text-[10px] font-medium text-status-success"}>
+                      Detour: +{trip.detourPercent}% ({trip.detourPercent > 20 ? 'exceeds fairness bound — route adjusted' : 'within 20% fairness bound'})
+                    </span>
                   </div>
                 </div>
 

@@ -42,6 +42,7 @@ interface TrafficMapProps {
   fill?: boolean
   /** override the default routes to draw on the map */
   customRoutes?: typeof vehicleRoutes
+  simulatedIncidentRoadId?: string
 }
 
 const MIN_SCALE = 0.6
@@ -60,6 +61,7 @@ export function TrafficMap({
   showHint = true,
   fill = false,
   customRoutes,
+  simulatedIncidentRoadId,
 }: TrafficMapProps) {
   const { emergencyState } = useTrafficApp()
   const svgRef = useRef<SVGSVGElement | null>(null)
@@ -323,30 +325,41 @@ export function TrafficMap({
               ))}
 
             {/* congestion overlays */}
-            {roads
-              .filter((r) => r.congestion && r.congestion !== 'free')
-              .map((r) => (
+            {roads.map((r) => {
+              const isSimulated = r.id === simulatedIncidentRoadId
+              const isActive = isSimulated || (r.congestion && r.congestion !== 'free')
+              
+              const color = isSimulated 
+                ? '#ef4444' 
+                : (isActive ? congestionColorVar[r.congestion as 'moderate' | 'heavy'] : 'transparent')
+                
+              const width = isSimulated ? 4 : (r.congestion === 'heavy' ? 3 : 2)
+              const dash = isSimulated ? '8 6' : (r.congestion === 'heavy' ? '10 8' : '4 10')
+              
+              return (
                 <path
                   key={`cong-${r.id}`}
                   d={toPathD(r.points)}
                   fill="none"
-                  stroke={congestionColorVar[r.congestion as 'moderate' | 'heavy']}
-                  strokeWidth={r.congestion === 'heavy' ? 3 : 2}
+                  stroke={color}
+                  strokeWidth={width}
                   strokeLinecap="round"
-                  strokeDasharray={r.congestion === 'heavy' ? '10 8' : '4 10'}
-                  opacity={0.85}
+                  strokeDasharray={dash}
+                  opacity={isActive ? 0.85 : 0}
+                  className="transition-all duration-1000 ease-in-out"
                 />
-              ))}
+              )
+            })}
 
             {/* routes */}
             {activeRoutes.map((route) => {
               const dimmed = selection === 'all'
               return (
-                <g key={`route-${route.vehicle}`}>
+                <g key={`route-${route.id ?? route.vehicle}`}>
                   <path
                     d={toPathD(route.points)}
                     fill="none"
-                    stroke={vehicleColorVar[route.vehicle]}
+                    stroke={route.color ?? vehicleColorVar[route.vehicle]}
                     strokeWidth={focused ? 5 : 3.5}
                     strokeLinejoin="round"
                     strokeLinecap="round"
